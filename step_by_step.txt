@@ -1,0 +1,147 @@
+#### Installing Apache Hadoop
+
+sudo apt update
+sudo apt install openjdk-8-jdk -y
+sudo apt install openssh-server openssh-client -y
+sudo adduser hdoop
+su - hdoop
+cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+ssh localhost
+wget https://dlcdn.apache.org/hadoop/common/hadoop-3.3.1/hadoop-3.3.1.tar.gz
+tar xzf hadoop-3.3.1.tar.gz
+sudo nano .bashrc
+	in the bashrc file, add:
+	# Hadoop related
+	export HADOOP_HOME=/home/hdoop/hadoop-3.3.1
+	export HADOOP_INSTALL=$HADOOP_HOME
+	export HADOOP_MAPRED_HOME=$HADOOP_HOME
+	export HADOOP_COMMON_HOME=$HADOOP_HOME
+	export HADOOP_HDFS_HOME=$HADOOP_HOME
+	export YARN_HOME=$HADOOP_HOME
+	export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+	export PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
+	export HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib/nativ"
+sudo nano $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+	in the hadoop-env.sh file, add:
+	export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
+sudo nano $HADOOP_HOME/etc/hadoop/core-site.xml
+	in the core-site.xml file, add:
+	<configuration>
+	<property>
+ 	  <name>hadoop.tmp.dir</name>
+  	  <value>/home/hdoop/tmpdata</value>
+	</property>
+	<property>
+	  <name>fs.default.name</name>
+	  <value>hdfs://127.0.0.1:9000</value>
+	</property>
+	</configuration>
+sudo nano $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+	in the hdfs-site.xml file, add:
+	<configuration>
+	<property>
+  	<name>dfs.data.dir</name>
+  	<value>/home/hdoop/dfsdata/namenode</value>
+	</property>
+	<property>
+	  <name>dfs.data.dir</name>
+	  <value>/home/hdoop/dfsdata/datanode</value>
+	</property>
+	<property>
+	  <name>dfs.replication</name>
+	  <value>1</value>
+	</property>
+	</configuration>
+sudo nano $HADOOP_HOME/etc/hadoop/mapred-site.xml
+	in the mapred-site.xml file, add:
+	<configuration> 
+	<property> 
+	  <name>mapreduce.framework.name</name> 
+	  <value>yarn</value> 
+	</property> 
+	</configuration>
+sudo nano $HADOOP_HOME/etc/hadoop/yarn-site.xml
+	in the yarn-site.xml file, add:
+	<configuration>
+	<!-- Site specific YARN configuration properties -->
+	<property>
+	  <name>yarn.nodemanager.aux-services</name>
+	  <value>mapreduce_shuffle</value>
+	</property>
+	<property>
+	  <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+	  <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+	</property>
+	<property>
+	  <name>yarn.resourcemanager.hostname</name>
+	  <value>127.0.0.1</value>
+	</property>
+	<property>
+	  <name>yarn.acl.enable</name>
+	  <value>0</value>
+	</property>
+	<property>
+	  <name>yarn.nodemanager.env-whitelist</name>
+	  <value>JAVA_HOME,HADOOP_COMMON_HOME,HADOOP_HDFS_HOME,HADOOP_CONF_DIR,CLASSPATH_PERPEND_DISTCACHE,HADOOP_YARN_HOME,HADOOP_MAPRED_HOME</value>
+	</property>
+	</configuration>
+hdfs namenode -format
+$HADOOP_HOME/sbin/start-dfs.sh
+$HADOOP_HOME/sbin/start-yarn.sh
+
+#### Installing Apache Hive
+wget https://dlcdn.apache.org/hive/hive-3.1.2/apache-hive-3.1.2-bin.tar.gz
+tar xzf apache-hive-3.1.2-bin.tar.gz
+sudo nano .bashrc
+	in the .bashrc file, add:
+	export HIVE_HOME=home/hdoop/apache-hive-3.1.2-bin
+	export PATH=$PATH:$HIVE_HOME/bin
+source ~/.bashrc
+sudo nano $HIVE_HOME/bin/hive-config.sh
+	in the hive-config.sh file, add:
+	export HADOOP_HOME=/home/hdoop/hadoop-3.3.1
+hdfs dfs -mkdir /tmp
+hdfs dfs -chmod g+w /tmp
+hdfs dfs -ls /
+hdfs dfs -mkdir -p /user/hive/warehouse
+hdfs dfs -chmod g+w /user/hive/warehouse
+hdfs dfs -ls /user/hive
+cd $HIVE_HOME/conf
+cp hive-default.xml.template hive-site.xml
+
+### Start thrift server
+hive --service hiveserver2 --hiveconf hive.server2.thrift.port=10000 --hiveconf hive.root.logger=INFO,console
+
+enter with my default vm user and type:
+sudo passwd # Define a root password.
+usermod -aG sudo hdoop # make user hdoop sudoer
+
+in the hive-site.xml file, modify: # If dealing with errors that metion your user, the reason could be that this option is enabled.
+	<property>
+	<name>hive.server2.enable.doAs</name>
+	<value>FALSE</value> 
+	<description>
+	Setting this property to true will have HiveServer2 execute
+	Hive operations as the user making the calls to it.
+	</description>
+	</property> 
+
+### HiveServer is OK, but now i want to install Spark and work with SparkSQL
+sudo apt install default-jdk scala git -y
+wget https://dlcdn.apache.org/spark/spark-3.2.0/spark-3.2.0-bin-hadoop3.2.tgz
+sudo mv spark-3.2.0-bin-without-hadoop /opt/spark
+in the ~/.profile file, add:
+	export SPARK_HOME=/opt/spark
+	export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
+	export PYSPARK_PYTHON=/usr/bin/python3
+
+export SPARK_DIST_CLASSPATH=$(hadoop classpath) #thanks: https://stackoverflow.com/questions/32533831/can-i-use-spark-without-hadoop-for-development-environment
+start-master.sh
+start-worker.sh spark://principal-machine.us-west1-b.c.data-engineer-stacks-lv.internal:7077
+
+# to get spark-sql woking
+wget https://repo1.maven.org/maven2/org/apache/spark/spark-hive-thriftserver_2.12/3.2.0/spark-hive-thriftserver_2.12-3.2.0.ja
+mv spark-hive-thriftserver_2.12-3.2.0.jar /opt/spark/jars/
+wget https://repo1.maven.org/maven2/org/apache/spark/spark-hive_2.12/3.2.0/spark-hive_2.12-3.2.0.jar
+mv spark-hive_2.12-3.2.0.jar /opt/spark/jars/
