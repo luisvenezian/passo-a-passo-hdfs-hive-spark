@@ -145,3 +145,31 @@ wget https://repo1.maven.org/maven2/org/apache/spark/spark-hive-thriftserver_2.1
 mv spark-hive-thriftserver_2.12-3.2.0.jar /opt/spark/jars/
 wget https://repo1.maven.org/maven2/org/apache/spark/spark-hive_2.12/3.2.0/spark-hive_2.12-3.2.0.jar
 mv spark-hive_2.12-3.2.0.jar /opt/spark/jars/
+
+### Airflow
+sudo apt update
+sudo apt upgrade
+sudo apt-get install software-properties-common
+sudo apt-add-repository universe
+sudo apt-get install python-setuptools
+sudo apt-get install libmysqlclient-dev
+sudo apt-get install libssl-dev
+sudo apt-get install libkrb5-dev
+sudo apt install python3-virtualenv
+virtualenv airflow_idroot
+source bin/activate
+pip3 install apache-airflow
+pip3 install typing_extensions
+
+airflow create_user -h -u admin -p admin
+
+
+# SDK GCP
+
+
+
+
+
+
+
+

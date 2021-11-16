@@ -1,0 +1,13 @@
+### Tutoriais importantes:
+https://phoenixnap.com/kb/install-hadoop-ubuntu
+https://phoenixnap.com/kb/install-hive-on-ubuntu
+https://phoenixnap.com/kb/install-spark-on-ubuntu
+### Arquitetura
+https://data-flair.training/blogs/wp-content/uploads/sites/2/2019/02/Hadoop-Architecture2-01.jpg
+
+### Ao iniciar
+$HADOOP_HOME/sbin/start-dfs.sh    # HDFS
+$HADOOP_HOME/sbin/start-yarn.sh   # YARN
+export SPARK_DIST_CLASSPATH=$(hadoop classpath)
+start-master.sh                   # SPARK MASTER
+start-worker.sh spark://principal-machine.us-west1-b.c.data-engineer-stacks-lv.internal:7077 # SPARK WORKER
